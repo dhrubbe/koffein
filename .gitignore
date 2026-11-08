@@ -1,0 +1,27 @@
+# --- baseline (backup 2026-11-08) ---
+.DS_Store
+.env
+.env*.local
+node_modules/
+.next/
+.turbo/
+.vercel/
+*.tsbuildinfo
+DerivedData/
+.derivedData/
+.codex-derived-data/
+.derived-build/
+.sourcePackages/
+.build/
+.build_cache/
+.build-tmp/
+.xcbuild/
+.tgbuild/
+build/
+xcuserdata/
+*.xcuserstate
+*.xcarchive
+*.app
+*.log
+.claude/worktrees/
+.claude/settings.local.json
