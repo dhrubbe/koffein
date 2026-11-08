@@ -1,6 +1,6 @@
 # Koffein
 
-En minimal macOS-menyradsapp som håller Macen vaken.
+En minimal macOS-menyradsapp som håller Macen vaken. Kräver macOS 26 eller senare.
 
 ## Bygg och kör
 

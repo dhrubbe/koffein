@@ -12,7 +12,7 @@ mkdir -p "$BUILD_DIR" "$ROOT/.build/module-cache"
 CLANG_MODULE_CACHE_PATH="$ROOT/.build/module-cache" \
 SWIFT_MODULECACHE_PATH="$ROOT/.build/module-cache" \
 xcrun swiftc -parse-as-library -O \
-  -target arm64-apple-macosx13.0 \
+  -target arm64-apple-macosx26.0 \
   -framework AppKit -framework SwiftUI -framework IOKit -framework ServiceManagement \
   "$ROOT/Sources/Koffein/main.swift" \
   -o "$BUILD_DIR/Koffein"
@@ -40,7 +40,7 @@ cat > "$STAGE/Contents/Info.plist" <<'PLIST'
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>13.0</string>
+	<string>26.0</string>
 	<key>LSUIElement</key>
 	<true/>
 </dict>

@@ -78,120 +78,146 @@ import SwiftUI
     }
 }
 
+/// MenuBarExtra's window has 16pt corners (measured on macOS 27). Shapes inset from its edge use this minus the inset, so they stay concentric.
+let panelRadius: CGFloat = 16
+/// Every row's content starts this far from the panel's edge.
+let gutter: CGFloat = 14
+
 struct KoffeinMenu: View {
     @ObservedObject var koffein: Koffein
     private let durations = [(0, ""), (15, "15 min"), (30, "30 min"), (60, "1 h"), (240, "4 h"), (480, "8 h")]
 
+    private var status: String {
+        guard koffein.isActive else { return "Av" }
+        return koffein.endDate.map { "Stängs av \($0.formatted(date: .omitted, time: .shortened))" } ?? "Tills vidare"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 12) {
+                Button {
+                    withAnimation(.spring(duration: 0.3, bounce: 0)) { koffein.isActive ? koffein.stop() : koffein.start() }
+                } label: {
+                    Image(systemName: "cup.and.saucer.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(koffein.isActive ? Color.white : Color.primary)
+                        .frame(width: 40, height: 40)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                // Otherwise it takes keyboard focus when the menu opens, so Space switches Koffein off.
+                .focusable(false)
+                .glassEffect(koffein.isActive ? .regular.tint(.accentColor).interactive() : .regular.interactive(), in: .circle)
+                .accessibilityLabel("Koffein")
+                .accessibilityValue(koffein.isActive ? "På" : "Av")
+                .accessibilityAddTraits(.isToggle)
+
+                VStack(alignment: .leading, spacing: 1) {
                     Text("Koffein").font(.headline)
-                    if let endDate = koffein.endDate {
-                        Text("Stängs av \(endDate.formatted(date: .omitted, time: .shortened))").font(.subheadline).foregroundStyle(.secondary)
+                    Text(status).font(.subheadline).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, gutter)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+
+            // Only the selected chip is glass: glass on the glass panel muddies both.
+            GlassEffectContainer {
+                HStack(spacing: 4) {
+                    ForEach(durations, id: \.0) { minutes, label in
+                        let isSelected = minutes == koffein.minutes
+                        Button {
+                            withAnimation(.spring(duration: 0.35, bounce: 0)) { koffein.minutes = minutes }
+                        } label: {
+                            Group {
+                                if minutes == 0 {
+                                    Image(systemName: "infinity").font(.system(size: 12, weight: .semibold)).accessibilityLabel("Tills vidare")
+                                } else {
+                                    Text(label)
+                                }
+                            }
+                            .font(.system(size: 12, weight: .medium))
+                            .fixedSize()
+                            .foregroundStyle(isSelected ? Color.white : Color.primary)
+                            .padding(.horizontal, 8)
+                            .frame(maxWidth: .infinity, minHeight: 28)
+                            .contentShape(Capsule())
+                            .background(isSelected ? AnyShapeStyle(.clear) : AnyShapeStyle(.quaternary), in: Capsule())
+                            .glassEffect(isSelected ? .regular.tint(.accentColor).interactive() : .identity, in: .capsule)
+                        }
+                        .buttonStyle(.plain)
+                        .focusable(false)
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
                     }
                 }
-                Spacer()
-                Toggle("Koffein", isOn: Binding(get: { koffein.isActive }, set: { $0 ? koffein.start() : koffein.stop() }))
-                    .labelsHidden()
             }
-            .padding(.horizontal, 14)
-            .frame(minHeight: 36)
+            .padding(.horizontal, gutter)
 
-            MenuDivider()
+            MenuDivider().padding(.top, 6)
 
-            DurationPicker(minutes: $koffein.minutes, options: durations)
-                .padding(.horizontal, 14)
-            .padding(.vertical, 4)
-
-            MenuDivider()
-
-            SettingRow(title: "Öppna vid inloggning", isOn: $koffein.opensAtLogin)
-            SettingRow(title: "Aktivera vid start", isOn: $koffein.activatesAtLaunch)
-            SettingRow(title: "Låt skärmen gå i vila", isOn: $koffein.allowsDisplaySleep)
+            SettingRow(icon: "power", color: .gray, title: "Öppna vid inloggning", isOn: $koffein.opensAtLogin)
+            SettingRow(icon: "bolt.fill", color: .orange, title: "Aktivera vid start", isOn: $koffein.activatesAtLaunch)
+            SettingRow(icon: "moon.fill", color: .indigo, title: "Låt skärmen gå i vila", isOn: $koffein.allowsDisplaySleep)
 
             MenuDivider()
 
             MenuButton(title: "Avsluta Koffein") { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
         }
-        .padding(.vertical, 6)
+        .padding(.top, 6)
         .frame(width: 320)
         .toggleStyle(.switch)
     }
 }
 
-// SwiftUI's segmented Picker can settle on equal-width segments wider than the menu and push everything
-// off the left edge, so the AppKit control is sized to exactly the width it is offered.
-struct DurationPicker: NSViewRepresentable {
-    @Binding var minutes: Int
-    let options: [(Int, String)]
-
-    func makeNSView(context: Context) -> NSSegmentedControl {
-        let control = NSSegmentedControl(labels: options.map { $0.1 }, trackingMode: .selectOne, target: context.coordinator, action: #selector(Coordinator.select(_:)))
-        control.segmentDistribution = .fillProportionally
-        if let index = options.firstIndex(where: { $0.0 == 0 }) {
-            control.setImage(NSImage(systemSymbolName: "infinity", accessibilityDescription: "Tills vidare"), forSegment: index)
-        }
-        return control
-    }
-
-    func updateNSView(_ control: NSSegmentedControl, context: Context) {
-        context.coordinator.parent = self
-        control.selectedSegment = options.firstIndex { $0.0 == minutes } ?? -1
-    }
-
-    func sizeThatFits(_ proposal: ProposedViewSize, nsView control: NSSegmentedControl, context: Context) -> CGSize? {
-        CGSize(width: proposal.width ?? control.fittingSize.width, height: control.fittingSize.height)
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    @MainActor final class Coordinator: NSObject {
-        var parent: DurationPicker
-        init(_ parent: DurationPicker) { self.parent = parent }
-        @objc func select(_ control: NSSegmentedControl) { parent.minutes = parent.options[control.selectedSegment].0 }
-    }
-}
-
 struct SettingRow: View {
+    let icon: String
+    let color: Color
     let title: String
     @Binding var isOn: Bool
 
     var body: some View {
-        HStack {
+        HStack(spacing: 9) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(color.gradient, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .accessibilityHidden(true)
             Text(title)
             Spacer(minLength: 12)
             Toggle(title, isOn: $isOn).labelsHidden().controlSize(.small)
         }
-        .padding(.horizontal, 14)
-        .frame(minHeight: 28)
+        .padding(.horizontal, gutter)
+        .frame(minHeight: 32)
     }
 }
 
+/// The last row, so its hover sits in the panel's bottom corners: same inset on every side, radius concentric with the panel.
 struct MenuButton: View {
     let title: String
     let action: () -> Void
     @State private var isHovered = false
+    private let inset: CGFloat = 6
 
     var body: some View {
         Button(action: action) {
             Text(title)
-                .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
-                .padding(.horizontal, 9)
+                .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                .padding(.horizontal, gutter - inset)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         // Otherwise it takes keyboard focus when the menu opens, so Return or Space quits the app.
         .focusable(false)
-        .background(isHovered ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .background(isHovered ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear), in: RoundedRectangle(cornerRadius: panelRadius - inset, style: .continuous))
         .onHover { isHovered = $0 }
-        .padding(.horizontal, 5)
+        .padding(inset)
     }
 }
 
 struct MenuDivider: View {
-    var body: some View { Divider().padding(.horizontal, 14).padding(.vertical, 5) }
+    var body: some View { Divider().padding(.horizontal, gutter).padding(.vertical, 5) }
 }
 
 @main struct KoffeinApp: App {
