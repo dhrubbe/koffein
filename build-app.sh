@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$ROOT/.build/release"
 APP_DIR="$ROOT/Koffein.app"
+# Ad-hoc by default. scripts/release.sh passes a Developer ID identity for notarized builds.
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+VERSION="${VERSION:-1.0}"
 # iCloud Drive tags bundles in ~/Documents with Finder info, which codesign rejects, so assemble and sign outside it.
 STAGE="$(mktemp -d)/Koffein.app"
 trap 'rm -rf "${STAGE:h}"' EXIT
@@ -20,7 +23,7 @@ mkdir -p "$STAGE/Contents/MacOS" "$STAGE/Contents/Resources"
 cp "$BUILD_DIR/Koffein" "$STAGE/Contents/MacOS/Koffein"
 chmod +x "$STAGE/Contents/MacOS/Koffein"
 
-cat > "$STAGE/Contents/Info.plist" <<'PLIST'
+cat > "$STAGE/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -36,7 +39,7 @@ cat > "$STAGE/Contents/Info.plist" <<'PLIST'
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>$VERSION</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
@@ -47,7 +50,16 @@ cat > "$STAGE/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-codesign --force --sign - "$STAGE"
+if [[ "$SIGN_IDENTITY" == "-" ]]; then
+  codesign --force --sign - "$STAGE"
+else
+  codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$STAGE"
+fi
+
+if [[ -n "${NO_OPEN:-}" ]]; then
+  rm -rf "$APP_DIR"; ditto "$STAGE" "$APP_DIR"
+  echo "Built $APP_DIR"; exit 0
+fi
 
 # Quit the running copy first, or `open` starts a second one next to it.
 pkill -x Koffein && sleep 0.5 || true

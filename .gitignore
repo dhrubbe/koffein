@@ -25,3 +25,7 @@ xcuserdata/
 *.log
 .claude/worktrees/
 .claude/settings.local.json
+
+# Design explorations, kept local
+Riffs/
+dist/

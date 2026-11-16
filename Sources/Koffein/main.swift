@@ -85,11 +85,11 @@ let gutter: CGFloat = 14
 
 struct KoffeinMenu: View {
     @ObservedObject var koffein: Koffein
-    private let durations = [(0, ""), (15, "15 min"), (30, "30 min"), (60, "1 h"), (240, "4 h"), (480, "8 h")]
+    private let durations = [(0, ""), (15, "15 min"), (30, "30 min"), (60, "1 hr"), (240, "4 hrs"), (480, "8 hrs")]
 
     private var status: String {
-        guard koffein.isActive else { return "Av" }
-        return koffein.endDate.map { "Stängs av \($0.formatted(date: .omitted, time: .shortened))" } ?? "Tills vidare"
+        guard koffein.isActive else { return "Off" }
+        return koffein.endDate.map { "Until \($0.formatted(date: .omitted, time: .shortened))" } ?? "Indefinitely"
     }
 
     var body: some View {
@@ -109,7 +109,7 @@ struct KoffeinMenu: View {
                 .focusable(false)
                 .glassEffect(koffein.isActive ? .regular.tint(.accentColor).interactive() : .regular.interactive(), in: .circle)
                 .accessibilityLabel("Koffein")
-                .accessibilityValue(koffein.isActive ? "På" : "Av")
+                .accessibilityValue(koffein.isActive ? "On" : "Off")
                 .accessibilityAddTraits(.isToggle)
 
                 VStack(alignment: .leading, spacing: 1) {
@@ -131,7 +131,7 @@ struct KoffeinMenu: View {
                         } label: {
                             Group {
                                 if minutes == 0 {
-                                    Image(systemName: "infinity").font(.system(size: 12, weight: .semibold)).accessibilityLabel("Tills vidare")
+                                    Image(systemName: "infinity").font(.system(size: 12, weight: .semibold)).accessibilityLabel("Indefinitely")
                                 } else {
                                     Text(label)
                                 }
@@ -155,13 +155,13 @@ struct KoffeinMenu: View {
 
             MenuDivider().padding(.top, 6)
 
-            SettingRow(icon: "power", color: .gray, title: "Öppna vid inloggning", isOn: $koffein.opensAtLogin)
-            SettingRow(icon: "bolt.fill", color: .orange, title: "Aktivera vid start", isOn: $koffein.activatesAtLaunch)
-            SettingRow(icon: "moon.fill", color: .indigo, title: "Låt skärmen gå i vila", isOn: $koffein.allowsDisplaySleep)
+            SettingRow(icon: "power", color: .gray, title: "Open at Login", isOn: $koffein.opensAtLogin)
+            SettingRow(icon: "bolt.fill", color: .orange, title: "Activate on Launch", isOn: $koffein.activatesAtLaunch)
+            SettingRow(icon: "moon.fill", color: .indigo, title: "Allow Display Sleep", isOn: $koffein.allowsDisplaySleep)
 
             MenuDivider()
 
-            MenuButton(title: "Avsluta Koffein") { NSApplication.shared.terminate(nil) }
+            MenuButton(title: "Quit Koffein") { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
         }
         .padding(.top, 6)
@@ -228,7 +228,7 @@ struct MenuDivider: View {
             KoffeinMenu(koffein: koffein)
         } label: {
             // MenuBarExtra drops .accessibilityLabel, so VoiceOver only hears the description baked into the NSImage.
-            Image(nsImage: NSImage(systemSymbolName: koffein.isActive ? "cup.and.saucer.fill" : "cup.and.saucer", accessibilityDescription: koffein.isActive ? "Koffein, på" : "Koffein, av")!)
+            Image(nsImage: NSImage(systemSymbolName: koffein.isActive ? "cup.and.saucer.fill" : "cup.and.saucer", accessibilityDescription: koffein.isActive ? "Koffein, on" : "Koffein, off")!)
         }
         .menuBarExtraStyle(.window)
     }
