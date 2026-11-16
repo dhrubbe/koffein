@@ -25,7 +25,7 @@ cd koffein
 ./build-app.sh
 ```
 
-The script compiles the app with the Xcode command line tools, signs it ad hoc, quits any running copy and opens the new build. The whole app lives in [`Sources/Koffein/main.swift`](Sources/Koffein/main.swift).
+The script compiles the app with the Xcode command line tools, signs it ad hoc, quits any running copy and opens the new build. The whole app lives in [`Sources/Koffein/Koffein.swift`](Sources/Koffein/Koffein.swift).
 
 ## How it works
 

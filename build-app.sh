@@ -17,7 +17,7 @@ SWIFT_MODULECACHE_PATH="$ROOT/.build/module-cache" \
 xcrun swiftc -parse-as-library -O \
   -target arm64-apple-macosx26.0 \
   -framework AppKit -framework SwiftUI -framework IOKit -framework ServiceManagement \
-  "$ROOT/Sources/Koffein/main.swift" \
+  "$ROOT/Sources/Koffein/Koffein.swift" \
   -o "$BUILD_DIR/Koffein"
 mkdir -p "$STAGE/Contents/MacOS" "$STAGE/Contents/Resources"
 cp "$BUILD_DIR/Koffein" "$STAGE/Contents/MacOS/Koffein"
