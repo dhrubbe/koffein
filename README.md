@@ -2,14 +2,11 @@
   <img src=".github/assets/cover.png" alt="Koffein" width="100%">
 </p>
 
-Koffein is a small menu bar app that keeps your Mac awake, for as long as you need and no longer.
-
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/menu-dark.png">
-    <img src=".github/assets/menu-light.png" alt="The Koffein menu" width="448">
-  </picture>
+  <img src=".github/assets/menu.png" alt="The Koffein menu in light and dark mode" width="100%">
 </p>
+
+Koffein is a small menu bar app that keeps your Mac awake, for as long as you need and no longer.
 
 ## Install
 
